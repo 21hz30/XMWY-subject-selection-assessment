@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}教师表管理 - 西南位育选课系统{% endblock %}
+{% block content %}
+<h2 class="mb-3">教师表管理</h2>
+<div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">教师列表（共 {{ teachers|length }} 人）</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#teacherModal" id="btn-add-teacher">
+            <i class="bi bi-plus-lg"></i> 添加教师
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr><th>ID</th><th>姓名</th><th>性别</th><th>教职工号</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in teachers %}
+                    <tr>
+                        <td>{{ t.id }}</td>
+                        <td>{{ t.name }}</td>
+                        <td>{{ t.gender }}</td>
+                        <td>{{ t.employee_id }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-edit-teacher"
+                                    data-id="{{ t.id }}" data-name="{{ t.name }}" data-gender="{{ t.gender }}" data-eid="{{ t.employee_id }}">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning btn-reset-tpwd" data-id="{{ t.id }}">
+                                <i class="bi bi-key"></i> 重置密码
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-teacher" data-id="{{ t.id }}" data-name="{{ t.name }}">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="teacherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teacherModalTitle">添加教师</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tedit-id">
+                <div class="mb-3"><label class="form-label">姓名</label><input type="text" class="form-control" id="t-name"></div>
+                <div class="mb-3"><label class="form-label">性别</label><select class="form-select" id="t-gender"><option value="男">男</option><option value="女">女</option></select></div>
+                <div class="mb-3"><label class="form-label">教职工号</label><input type="text" class="form-control" id="t-eid"></div>
+                <div class="mb-3" id="t-pwd-group"><label class="form-label">初始密码</label><input type="password" class="form-control" id="t-password"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btn-save-teacher">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const modal = new bootstrap.Modal(document.getElementById('teacherModal'));
+document.getElementById('btn-add-teacher').addEventListener('click', function() {
+    document.getElementById('teacherModalTitle').textContent = '添加教师';
+    document.getElementById('tedit-id').value = '';
+    document.getElementById('t-name').value = '';
+    document.getElementById('t-gender').value = '男';
+    document.getElementById('t-eid').value = '';
+    document.getElementById('t-password').value = '';
+    document.getElementById('t-pwd-group').style.display = 'block';
+});
+document.querySelectorAll('.btn-edit-teacher').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('teacherModalTitle').textContent = '编辑教师';
+        document.getElementById('tedit-id').value = this.dataset.id;
+        document.getElementById('t-name').value = this.dataset.name;
+        document.getElementById('t-gender').value = this.dataset.gender;
+        document.getElementById('t-eid').value = this.dataset.eid;
+        document.getElementById('t-password').value = '';
+        document.getElementById('t-pwd-group').style.display = 'none';
+        modal.show();
+    });
+});
+document.getElementById('btn-save-teacher').addEventListener('click', async function() {
+    const id = document.getElementById('tedit-id').value;
+    const name = document.getElementById('t-name').value.trim();
+    const gender = document.getElementById('t-gender').value;
+    const eid = document.getElementById('t-eid').value.trim();
+    const password = document.getElementById('t-password').value;
+    let url, body;
+    if (id) {
+        url = `/admin/teacher/edit/${id}`;
+        body = JSON.stringify({ name, gender, employee_id: eid });
+    } else {
+        url = '/admin/teacher/add';
+        body = JSON.stringify({ name, gender, employee_id: eid, password });
+    }
+    const resp = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
+    const data = await resp.json();
+    alert(data.message);
+    modal.hide();
+    window.location.reload();
+});
+document.querySelectorAll('.btn-reset-tpwd').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const newPwd = prompt('请输入新密码（至少6位）：');
+        if (!newPwd) return;
+        if (newPwd.length < 6) { alert('密码长度不能少于6位。'); return; }
+        const resp = await fetch(`/admin/teacher/reset-password/${this.dataset.id}`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ new_password: newPwd })
+        });
+        const data = await resp.json();
+        alert(data.message);
+    });
+});
+document.querySelectorAll('.btn-delete-teacher').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        if (!confirm(`确定要删除教师 ${this.dataset.name} 吗？`)) return;
+        const resp = await fetch(`/admin/teacher/delete/${this.dataset.id}`, { method:'POST', headers:{'Content-Type':'application/json'} });
+        const data = await resp.json();
+        alert(data.message);
+        window.location.reload();
+    });
+});
+</script>
+{% endblock %}

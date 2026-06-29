@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}注册 - 西南位育选课系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <h3 class="text-center mb-4">路人注册</h3>
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <!-- 步骤1: 输入手机号 -->
+                <div id="step-phone">
+                    <div class="mb-3">
+                        <label for="reg-phone" class="form-label">手机号</label>
+                        <input type="text" class="form-control" id="reg-phone" placeholder="请输入11位手机号" maxlength="11">
+                        <div class="invalid-feedback" id="phone-error"></div>
+                    </div>
+                    <button type="button" class="btn btn-primary w-100" id="btn-send-code">
+                        <i class="bi bi-chat-dots"></i> 获取验证码
+                    </button>
+                    <div class="mt-2 d-none" id="code-hint">
+                        <small class="text-muted">开发阶段验证码已打印在控制台，请按F12查看。</small>
+                    </div>
+                </div>
+
+                <!-- 步骤2: 输入验证码 -->
+                <div id="step-code" style="display:none;">
+                    <div class="alert alert-info" id="phone-display"></div>
+                    <div class="mb-3">
+                        <label for="reg-code" class="form-label">验证码</label>
+                        <input type="text" class="form-control" id="reg-code" placeholder="请输入6位验证码" maxlength="6">
+                        <div class="invalid-feedback" id="code-error"></div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-resend">重新发送</button>
+                        <button type="button" class="btn btn-primary flex-grow-1" id="btn-verify-code">验证</button>
+                    </div>
+                </div>
+
+                <!-- 步骤3: 设置密码 -->
+                <div id="step-password" style="display:none;">
+                    <div class="alert alert-success">验证通过！请设置您的密码。</div>
+                    <div class="mb-3">
+                        <label for="reg-password" class="form-label">设定密码</label>
+                        <input type="password" class="form-control" id="reg-password" placeholder="请输入密码（至少6位）">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-password2" class="form-label">确认密码</label>
+                        <input type="password" class="form-control" id="reg-password2" placeholder="请再次输入密码">
+                        <div class="invalid-feedback" id="pwd-error"></div>
+                    </div>
+                    <button type="button" class="btn btn-success w-100" id="btn-register">
+                        <i class="bi bi-check-lg"></i> 完成注册
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('login') }}">返回登录</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let phoneNumber = '';
+let verified = false;
+
+document.getElementById('btn-send-code').addEventListener('click', async function() {
+    phoneNumber = document.getElementById('reg-phone').value.trim();
+    if (phoneNumber.length !== 11 || !/^\d+$/.test(phoneNumber)) {
+        document.getElementById('phone-error').textContent = '请输入正确的11位手机号';
+        return;
+    }
+
+    // 检查是否已注册
+    const checkResp = await fetch('{{ url_for("check_phone") }}', {
+        method: 'POST',
+        body: new URLSearchParams({ phone: phoneNumber }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const checkData = await checkResp.json();
+    if (checkData.exists) {
+        document.getElementById('phone-error').textContent = '该手机号已被注册';
+        return;
+    }
+
+    const resp = await fetch('{{ url_for("send_code") }}', {
+        method: 'POST',
+        body: new URLSearchParams({ phone: phoneNumber }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const data = await resp.json();
+    console.log('验证码:', data.code);
+    document.getElementById('step-phone').style.display = 'none';
+    document.getElementById('step-code').style.display = 'block';
+    document.getElementById('phone-display').textContent = '验证码已发送至 ' + phoneNumber + '（开发阶段请查看F12控制台）';
+});
+
+document.getElementById('btn-verify-code').addEventListener('click', async function() {
+    const code = document.getElementById('reg-code').value.trim();
+    const resp = await fetch('{{ url_for("verify_code") }}', {
+        method: 'POST',
+        body: new URLSearchParams({ code: code }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+        verified = true;
+        document.getElementById('step-code').style.display = 'none';
+        document.getElementById('step-password').style.display = 'block';
+    } else {
+        document.getElementById('code-error').textContent = '验证码错误';
+    }
+});
+
+document.getElementById('btn-register').addEventListener('click', async function() {
+    const pwd = document.getElementById('reg-password').value;
+    const pwd2 = document.getElementById('reg-password2').value;
+    if (pwd.length < 6) {
+        document.getElementById('pwd-error').textContent = '密码长度不能少于6位';
+        return;
+    }
+    if (pwd !== pwd2) {
+        document.getElementById('pwd-error').textContent = '两次密码输入不一致';
+        return;
+    }
+    if (!verified) return;
+
+    const resp = await fetch('{{ url_for("register") }}', {
+        method: 'POST',
+        body: new URLSearchParams({ phone: phoneNumber, password: pwd }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    if (resp.redirected) {
+        window.location.href = resp.url;
+    } else {
+        window.location.href = '{{ url_for("login") }}';
+    }
+});
+</script>
+{% endblock %}

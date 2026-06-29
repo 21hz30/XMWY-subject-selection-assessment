@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}六门学科深度解析 - 西南位育选课系统{% endblock %}
+{% block content %}
+<h2 class="mb-4 text-center">六门学科深度解析</h2>
+<p class="text-center text-muted mb-5">了解上海等级考各学科的试卷结构、命题套路与选课限制</p>
+
+<div class="row g-4">
+    <!-- 物理卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0"><i class="bi bi-lightning-charge"></i> 物理</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary fw-bold">一、模型识别与数学工具是分水岭</h6>
+                <p>上海物理等级考，难不在知识广度，而在将实际情景翻译成物理模型的速度。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>单选题（约40分）：</strong>前几题考常识与概念辨析，如"下列哪项是核聚变""这是干涉还是衍射"。后几题会开始上强度，比如给一张v-t图或F-t图，考察图像的物理意义。</li>
+                    <li><strong>填空题（约20分）：</strong>常结合实验或小计算，如光波波长、天体运动周期推算。</li>
+                    <li><strong>综合题（约40分）：</strong>真正的拉分区。由实验题与计算大题构成。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>实验题（必考，且最易失分）</strong><br>上海卷的实验题不走"默写步骤"路线，而是DIS数字化实验系统的深度应用。常考情景：给你一组力传感器、位移传感器测出的数据表格或图线，问你"该操作遗漏了哪个关键步骤（如平衡摩擦力）""造成图线弯曲的可能原因"。其实质是考察你能否还原实验现场，而不是背诵。应对的关键在于，每个实验都必须搞懂"为什么要用这个装置、数据怎么处理、误差来自哪里"。</p>
+                <p class="small"><strong>计算大题（模型套用）</strong><br>上海物理卷的计算题通常比较模型化：</p>
+                <ul class="small">
+                    <li><strong>运动与力：</strong>斜坡、传送带、弹簧连接体。核心是受力分析与运动过程的拆分。</li>
+                    <li><strong>电磁场：</strong>带电粒子在电场加速、在磁场偏转的拼接。曾考过电子在类似"速度选择器"结构的复合场中的运动轨迹。</li>
+                    <li><strong>文字论述题：</strong>这是上海特色。比如"从能量角度解释为什么开关断开后灯泡不是立即熄灭"。这种题得分关键是物理术语规范，必须出现"能量守恒""转化"等核心词，不能只用大白话。</li>
+                </ul>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <p class="small"><strong>物理和化学：必须同时选择物理和化学，缺一不可。</strong></p>
+                <p class="small">没有同时选"物理+化学"的组合这是失去最多专业选择权的选科方式。绝大多数理、工、农、医类专业都要求"物理+化学"必选。你基本与以下专业大类无缘：</p>
+                <ul class="small">
+                    <li><strong>理学类：</strong>数学、物理学、化学、生物科学、地质学、海洋科学、统计学等。</li>
+                    <li><strong>工学类：</strong>计算机、软件、电子信息、人工智能、机械、电气、土木、航空航天、材料、化工、环境工程等。</li>
+                    <li><strong>农学类：</strong>动物医学、植物生产、水产养殖等。</li>
+                    <li><strong>医学类：</strong>临床医学、口腔医学、基础医学、药学、预防医学等绝大多数专业。</li>
+                </ul>
+                <p class="small">总之，只要一门选了物理没选化学，或选化学没选物理，另一门就等于作用受限，绝大多数理工农医专业依旧无法覆盖。</p>
+                <p class="small text-success"><strong>"物理+化学+X"组合（已近无死角，但对口单科要求需留意）</strong><br>这是专业覆盖率最广的组合，基本打开了所有理工科大门。但需注意极少数专业的"单科"限制，详见其他学科。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 化学卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-success">
+            <div class="card-header bg-success text-white">
+                <h4 class="card-title mb-0"><i class="bi bi-droplet"></i> 化学</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-success fw-bold">二、原理的综合调度是难点</h6>
+                <p>上海化学卷的难点在于，它不会告诉你这道题考的是"平衡"还是"元素"，需要你自己识别。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>选择题（约40分）：</strong>包括基础概念、离子方程式正误判断、有机官能团性质比较，以及少量计算（如阿伏伽德罗常数题）。</li>
+                    <li><strong>综合分析题（约60分）：</strong>四大板块固定出现：原理综合、元素与结构、有机推断、化学实验。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>原理综合题（拉开区分度）</strong><br>常以一个真实工业背景切入，如合成氨、煤化工。图上通常会画出容器、热交换器等。问题链条是：写热化学方程式 → 根据图线判断温度、压强对转化率的影响，并解释原因 → 计算某一段的速率或平衡常数 → 画出"增大压强后，正逆反应速率随时间变化"的v-t图。这里的陷阱在于图线的细致分析：图像上先拐先平数值大，但产物占比高不一定代表速率快。</p>
+                <p class="small"><strong>有机推断题（侦探推理）</strong><br>给出一大段信息：一些从未见过的反应（信息给予题），以及产物的核磁共振氢谱、红外光谱数据。你必须从"某物质只有两种化学环境的氢"这类信息，倒推出结构简式。上海卷极爱考"同分异构体"的数目和限定条件的书写，必须对官能团异构、位置异构高度敏感。</p>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <p class="small">若包含物理，不选化学，就等同于放弃绝大部分理工农医专业。能选择的理工科专业基本只有：</p>
+                <ul class="small">
+                    <li>部分要求"必选物理"但未要求化学的院校专业，如金融工程、管理科学与工程、工业工程等交叉学科。</li>
+                    <li>极个别"不限"或"必选地理"的工科专业（如个别院校的建筑学）。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 生物卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-info">
+            <div class="card-header bg-info text-white">
+                <h4 class="card-title mb-0"><i class="bi bi-flower1"></i> 生物</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-info fw-bold">三、长题干的信息筛选与遗传计算</h6>
+                <p>上海生物的考卷题量大，文字多，考察的是信息提取速度和逻辑严密性。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>选择题（约40分）：</strong>覆盖五大本，前面的较直白，后面的会变成"下列结构示意图正确的是""此流程图错误的是"。</li>
+                    <li><strong>综合分析题（约60分）：</strong>固定有：细胞与代谢、遗传与变异、稳态与调节、现代生物技术、生态。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>光合作用与呼吸作用（必考图像题）</strong><br>常给出一张"密闭容器中CO₂浓度或O₂释放速率随时间/光强变化"的曲线，让你分析光补偿点、光饱和点的移动，或判断某时刻叶绿体和线粒体的气体交换关系。关键是能同时画出两个过程的示意图，区分"总光合"与"净光合"。</p>
+                <p class="small"><strong>遗传病家系图与基因工程</strong><br>遗传题在上海卷中通常是"计算+论证"。给你一个复杂的家系图，除显隐性判断外，常涉及基因在常染色体或X染色体的定位判断，并要求写出推导过程。基因工程题会直接给出一段质粒图谱和目的基因序列，让你选择限制酶切割位点，并设计筛选重组质粒的方案，非常贴近实验操作。</p>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <p class="small">缺生物不影响绝大多数临床医学、计算机等热门专业的报考。但极少数顶尖医学院或特定专业可能要求"物化生"三选。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 政治卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="card-title mb-0"><i class="bi bi-flag"></i> 政治</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-danger fw-bold">四、"小切口深分析"与逻辑推导</h6>
+                <p>上海政治主观题的难点在于，必须用指定原理的深度去剖析具体问题。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>单项选择题：</strong>包含时政、基础概念、逻辑思维（如判断推理形式是否正确）。</li>
+                    <li><strong>材料分析题（核心大题）：</strong>通常是"一材多问"，围绕同一个时政热点从不同角度设问。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>必修模块的"限定词"答题法</strong><br>一道典型题目："结合材料，运用'联系的客观性'知识，分析长三角一体化发展的必然性。"这里"联系的客观性"就是不可逾越的边界。答"联系具有普遍性"不得分，因为跑题了。你必须就"客观性"这一点展开三层逻辑：<br>① 原理表述：联系是事物本身所固有的<br>② 材料对接：长三角地缘相邻、人文相通是客观现实<br>③ 方法论结论：要求我们从事物固有联系中把握事物，不能主观臆造。</p>
+                <p class="small"><strong>逻辑与思维模块（上海特色）</strong><br>可能考你辨析一段话的逻辑错误，例如偷换概念、循环论证。或要求在论述中运用"辩证分合"的思维方法，这种题有明确的答题框架，必须体现"分析"与"综合"两个环节。</p>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <ul class="small">
+                    <li><strong>"政治+历史+地理"纯文科组合：</strong>基本告别所有理工农医专业（因缺少物理和/或化学）。</li>
+                    <li>要求地理必选的地理科学类专业（已满足，无限制）。</li>
+                    <li>要求生物/化学必选的护理学专业。根据2027年新版要求，护理学专业必须在化学或生物中提出必选一科。纯文科组合一般无法满足，但具体看目标院校的要求，部分院校可能放宽为不限。</li>
+                    <li><strong>缺政治：</strong>无法报考公安学类、马克思主义理论类、思想政治教育（师范）等必须选政治的专业。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地理卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="card-title mb-0"><i class="bi bi-globe-asia-australia"></i> 地理</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-warning fw-bold">五、地理原理的因果链分析</h6>
+                <p>地理题的核心是空间定位和因果推导的完整性。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>选择题：</strong>包含地球运动计算（如昼长、正午太阳高度）、大气环流、洋流性质判断等。</li>
+                    <li><strong>综合分析题：</strong>通常按"自然→人文→灾害/发展"的线索展开。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>区域分析的固定逻辑链</strong><br>面对一个陌生区域（如南美洲某地、中国西南某河谷），问题是不变的套路：<br>① <strong>描述特征：</strong>地形以什么为主，地势哪高哪低；气候类型与水文特征。<br>② <strong>分析成因：</strong>用地理原理对接区域信息。如"为什么这里夏季多暴雨"→ 亚热带季风气候 + 地形抬升。<br>③ <strong>评价影响与措施：</strong>水库建设的利弊、农业可持续发展的建议。<br>失分点常在于因果断裂，说"该地降水多"却忘了交代"受来自海洋的盛行风影响且位于迎风坡"。每一个结论都必须追溯到一个具体的地理原理上。</p>
+                <p class="small"><strong>自然地理的计算与空间想象</strong><br>上海卷特别重视太阳视运动。可能给你一个地点，让你判断某日日出、正午、日落时的太阳方位和物体影子朝向。这需要在脑中建立球面空间的动态模型。</p>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <p class="small">缺地理无法报考地理科学、人文地理与城乡规划、测绘工程等要求必选地理的少数专业。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史卡片 -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm subject-card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="card-title mb-0"><i class="bi bi-clock-history"></i> 历史</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="text-secondary fw-bold">六、史料实证与中外关联的论述</h6>
+                <p>上海历史卷的绝对核心是用材料说话，以及在通史坐标下串联中外。</p>
+
+                <h6 class="fw-bold">试卷结构与核心题型</h6>
+                <ul class="small">
+                    <li><strong>选择题：</strong>较少直接考背诵，多是以史料情境引入，比如给一张汉代画像砖拓片图，问反映了什么生产状况。</li>
+                    <li><strong>综合分析题：</strong>往往是3-4则主题相关的材料（文献、地图、表格数据），后接若干问题。</li>
+                    <li><strong>论述题：</strong>150-200字的小论文，这是决胜局。</li>
+                </ul>
+
+                <h6 class="fw-bold">命题套路与应对</h6>
+                <p class="small"><strong>"信息提取-史料价值"阶梯</strong><br>一个经典设问："材料一、二对于研究该事件有何不同价值？"你需要判断：材料一是官方正史，属于二手史料，价值在于反映后世评价或官方正统观念；材料二是当事人日记，属于一手史料，价值在于细节真实，但可能带有个人主观性。答题必须写清史料类型，并辨证评价其优缺点。</p>
+                <p class="small"><strong>小论文的"论点-论证-升华"结构</strong><br>上海论文题常是"结合材料与所学，评析某一观点"。论证过程必须史论结合，每一个分论点后都要跟具体史实，且史实要准确到时间节点。最后的升华是从具体史实上升到规律性认识，体现大历史观。</p>
+
+                <h6 class="fw-bold text-danger">选课限制</h6>
+                <p class="small">不选历史，无法选择历史学、世界史、考古学、文物与博物馆学、文化遗产等。这是对历史学科最直接的对口专业。民族学类：民族学等专业，往往要求必选历史。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

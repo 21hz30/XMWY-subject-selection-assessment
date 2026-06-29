@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}学生信息与选课管理 - 西南位育选课系统{% endblock %}
+{% block content %}
+<h2 class="mb-3">学生信息与选课管理</h2>
+
+<div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">学生列表（共 {{ students|length }} 人）</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#studentModal" id="btn-add-student">
+            <i class="bi bi-plus-lg"></i> 添加学生
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>班级</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>学号</th>
+                        <th>已选课程</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.class_name }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.gender }}</td>
+                        <td>{{ s.student_number }}</td>
+                        <td>
+                            {% if s.selected_courses %}
+                            {% for c in s.selected_courses.split(',') %}
+                            <span class="badge bg-success">{{ c }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <span class="text-muted">未选</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-edit"
+                                    data-id="{{ s.id }}" data-class="{{ s.class_name }}" data-name="{{ s.name }}"
+                                    data-gender="{{ s.gender }}" data-sn="{{ s.student_number }}"
+                                    data-courses="{{ s.selected_courses or '' }}">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning btn-reset-pwd" data-id="{{ s.id }}">
+                                <i class="bi bi-key"></i> 重置密码
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete" data-id="{{ s.id }}" data-name="{{ s.name }}">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 添加/编辑学生弹窗 -->
+<div class="modal fade" id="studentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentModalTitle">添加学生</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-id">
+                <div class="mb-3">
+                    <label class="form-label">班级</label>
+                    <input type="text" class="form-control" id="s-class" placeholder="如：高一(1)班">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">姓名</label>
+                    <input type="text" class="form-control" id="s-name">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">性别</label>
+                    <select class="form-select" id="s-gender">
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">学号（8位班学号）</label>
+                    <input type="text" class="form-control" id="s-sn" maxlength="8" placeholder="如 20240101">
+                </div>
+                <div class="mb-3" id="pwd-group">
+                    <label class="form-label">初始密码</label>
+                    <input type="password" class="form-control" id="s-password" placeholder="请输入初始密码">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">选课决定</label>
+                    <input type="text" class="form-control" id="s-courses" placeholder="如：物理,化学,地理">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="btn-save-student">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const modal = new bootstrap.Modal(document.getElementById('studentModal'));
+
+// 添加学生
+document.getElementById('btn-add-student').addEventListener('click', function() {
+    document.getElementById('studentModalTitle').textContent = '添加学生';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('s-class').value = '';
+    document.getElementById('s-name').value = '';
+    document.getElementById('s-gender').value = '男';
+    document.getElementById('s-sn').value = '';
+    document.getElementById('s-password').value = '';
+    document.getElementById('s-courses').value = '';
+    document.getElementById('pwd-group').style.display = 'block';
+});
+
+// 编辑按钮
+document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('studentModalTitle').textContent = '编辑学生';
+        document.getElementById('edit-id').value = this.dataset.id;
+        document.getElementById('s-class').value = this.dataset.class;
+        document.getElementById('s-name').value = this.dataset.name;
+        document.getElementById('s-gender').value = this.dataset.gender;
+        document.getElementById('s-sn').value = this.dataset.sn;
+        document.getElementById('s-password').value = '';
+        document.getElementById('s-courses').value = this.dataset.courses;
+        document.getElementById('pwd-group').style.display = 'none';
+        modal.show();
+    });
+});
+
+// 保存
+document.getElementById('btn-save-student').addEventListener('click', async function() {
+    const id = document.getElementById('edit-id').value;
+    const class_name = document.getElementById('s-class').value.trim();
+    const name = document.getElementById('s-name').value.trim();
+    const gender = document.getElementById('s-gender').value;
+    const sn = document.getElementById('s-sn').value.trim();
+    const password = document.getElementById('s-password').value;
+    const courses = document.getElementById('s-courses').value.trim();
+
+    if (id) {
+        // 编辑
+        const resp = await fetch(`/student/edit/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ class_name, name, gender, student_number: sn, selected_courses: courses })
+        });
+        const data = await resp.json();
+        alert(data.message);
+    } else {
+        // 添加
+        const resp = await fetch('/student/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ class_name, name, gender, student_number: sn, password })
+        });
+        const data = await resp.json();
+        alert(data.message);
+    }
+    modal.hide();
+    window.location.reload();
+});
+
+// 重置密码
+document.querySelectorAll('.btn-reset-pwd').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const newPwd = prompt('请输入新密码（至少6位）：');
+        if (!newPwd) return;
+        if (newPwd.length < 6) { alert('密码长度不能少于6位。'); return; }
+        const resp = await fetch(`/student/reset-password/${this.dataset.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_password: newPwd })
+        });
+        const data = await resp.json();
+        alert(data.message);
+    });
+});
+
+// 删除
+document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        if (!confirm(`确定要删除学生 ${this.dataset.name} 吗？此操作不可撤销。`)) return;
+        const resp = await fetch(`/student/delete/${this.dataset.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        alert(data.message);
+        window.location.reload();
+    });
+});
+</script>
+{% endblock %}

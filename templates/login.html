@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}登录 - 西南位育选课系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-primary">上海市西南位育中学</h2>
+            <p class="text-muted">"小三门"选课辅助系统</p>
+        </div>
+        <div class="card shadow">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs nav-fill" id="loginTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="student-tab" data-bs-toggle="tab" data-bs-target="#student-panel" type="button" role="tab">
+                            <i class="bi bi-person-badge"></i> 学生通道
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="teacher-tab" data-bs-toggle="tab" data-bs-target="#teacher-panel" type="button" role="tab">
+                            <i class="bi bi-person-workspace"></i> 教师通道
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body tab-content p-4" id="loginTabContent">
+                <!-- 学生通道 -->
+                <div class="tab-pane fade show active" id="student-panel" role="tabpanel">
+                    <h5 class="card-title mb-3"><i class="bi bi-person-badge text-primary"></i> 学生登录</h5>
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <input type="hidden" name="role" value="student">
+                        <div class="mb-3">
+                            <label for="student_number" class="form-label">学号 (8位班学号)</label>
+                            <input type="text" class="form-control" id="student_number" name="student_number"
+                                   placeholder="请输入8位学号，如 20240101" maxlength="8" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="student_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="student_password" name="password"
+                                   placeholder="请输入密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> 登录
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 教师通道 -->
+                <div class="tab-pane fade" id="teacher-panel" role="tabpanel">
+                    <h5 class="card-title mb-3"><i class="bi bi-person-workspace text-success"></i> 教师登录</h5>
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <input type="hidden" name="role" value="teacher">
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label">教职工号</label>
+                            <input type="text" class="form-control" id="employee_id" name="employee_id"
+                                   placeholder="请输入教职工号" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="teacher_password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="teacher_password" name="password"
+                                   placeholder="请输入密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> 登录
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 未注册弹窗 -->
+<div class="modal fade" id="notFoundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">账号不存在</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 检查URL参数，如果账号不存在则弹窗
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('guest_not_found') === '1') {
+        const modal = new bootstrap.Modal(document.getElementById('notFoundModal'));
+        modal.show();
+        // 清除URL中的参数，避免刷新时再次弹窗
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}选科倾向测评 - 西南位育选课系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h2 class="text-center mb-3">个性化选科倾向测评</h2>
+
+        <!-- 引导页 -->
+        <div id="survey-intro" class="card shadow">
+            <div class="card-body text-center p-5">
+                <i class="bi bi-clipboard2-check text-success" style="font-size: 4rem;"></i>
+                <p class="lead mt-3">这个问卷将辅助帮助您选择您的选课，可以尝试一下。</p>
+                <p class="text-muted">共69道题目，大约需要5-10分钟。您的答案将用于个性化选科推荐分析。</p>
+                <button class="btn btn-success btn-lg" id="btn-start-survey">
+                    <i class="bi bi-play-fill"></i> 开始测试
+                </button>
+            </div>
+        </div>
+
+        <!-- 答题区 -->
+        <div id="survey-quiz" style="display:none;">
+            <!-- 进度条 -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small>测评进度</small>
+                    <small><span id="progress-text">1/80</span></small>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" id="progress-bar" style="width: 1.25%;"></div>
+                </div>
+            </div>
+
+            <!-- 题目卡片 -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <span class="badge bg-secondary" id="q-category"></span>
+                    <span class="ms-2 fw-bold" id="q-number"></span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-4" id="q-text"></h5>
+                    <div id="q-options"></div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <button class="btn btn-outline-secondary" id="btn-prev" style="display:none;">
+                        <i class="bi bi-chevron-left"></i> 上一题
+                    </button>
+                    <div></div>
+                    <button class="btn btn-primary" id="btn-next">下一题 <i class="bi bi-chevron-right"></i></button>
+                    <button class="btn btn-success" id="btn-submit" style="display:none;">
+                        <i class="bi bi-check-lg"></i> 提交问卷
+                    </button>
+                </div>
+            </div>
+
+            <!-- 快速跳转 -->
+            <div class="text-center mt-3">
+                <small class="text-muted">点击题号直接跳转：</small>
+                <div id="q-jump" class="d-flex flex-wrap justify-content-center gap-1 mt-1" style="max-height: 120px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <!-- 结果区 -->
+        <div id="survey-result" style="display:none;">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-trophy"></i> 测评结果</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5>为您推荐最合适的选科方案（可返回主页查看排名第二和第三的选科）</h5>
+                        <div class="d-flex justify-content-center gap-3 my-4" id="recommendation-display"></div>
+                    </div>
+
+                    <!-- <h6 class="mb-3">六科加权最终得分</h6>
+                    <div style="max-width: 500px; margin: 0 auto;">
+                        <canvas id="result-chart"></canvas>
+                    </div> -->
+
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-primary" id="btn-retake">
+                            <i class="bi bi-arrow-repeat"></i> 重新测试
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const questions = {{ questions | tojson }};
+let currentIndex = 0;
+let answers = {};
+const totalQuestions = questions.length;
+
+// 选项生成器
+function getOptions(q) {
+    if (q.type === 'scale_0_5') {
+        return [
+            {label: '1分 - 完全不符合', value: 1},
+            {label: '2分 - 基本不符合', value: 2},
+            {label: '3分 - 部分符合', value: 3},
+            {label: '4分 - 基本符合', value: 4},
+            {label: '5分 - 完全符合', value: 5}
+        ];
+    }
+    if (q.type === 'scale_1_5') {
+        return [
+            {label: '1分 - 完全不稳定', value: 1},
+            {label: '2 - 不是很稳定', value: 2},
+            {label: '3 - 一般', value: 3},
+            {label: '4 - 较为稳定', value: 4},
+            {label: '5 - 非常稳定', value: 5}
+        ];
+    }
+    if (q.type === 'rank') {
+        return [
+            {label: 'D1（后20%）', value: 1},
+            {label: 'C1（20%-40%）', value: 2},
+            {label: 'B2（40%-60%）', value: 3},
+            {label: 'B1（60%-80%）', value: 4},
+            {label: 'A1（前20%）', value: 5}
+        ];
+    }
+    if (q.type === 'percentage') {
+        return [
+            {label: '≤20%', value: 1},
+            {label: '20% < x ≤ 40%', value: 2},
+            {label: '40% < x ≤ 60%', value: 3},
+            {label: '60% < x ≤ 80%', value: 4},
+            {label: '80% < x ≤ 100%', value: 5}
+        ];
+    }
+    if (q.type === 'subject_choice') {
+        return [
+            {label: '物理', value: 1},
+            {label: '化学', value: 2},
+            {label: '生物', value: 3},
+            {label: '历史', value: 4},
+            {label: '地理/政治', value: 5}
+        ];
+    }
+    return [];
+}
+
+function renderQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('q-category').textContent = q.category;
+    document.getElementById('q-number').textContent = `第 ${q.id} 题`;
+    document.getElementById('q-text').textContent = q.text;
+    document.getElementById('progress-text').textContent = `${currentIndex + 1}/${totalQuestions}`;
+    document.getElementById('progress-bar').style.width = ((currentIndex + 1) / totalQuestions * 100) + '%';
+
+    const optionsDiv = document.getElementById('q-options');
+    const options = getOptions(q);
+    let html = '';
+    const savedAnswer = answers[q.id];
+
+    if (q.type === 'subject_choice' || options.length <= 6) {
+        html = '<div class="list-group">';
+        options.forEach(opt => {
+            const checked = savedAnswer == opt.value ? 'active' : '';
+            html += `<button type="button" class="list-group-item list-group-item-action ${checked} option-btn" data-value="${opt.value}">${opt.label}</button>`;
+        });
+        html += '</div>';
+    }
+
+    optionsDiv.innerHTML = html;
+
+    // 绑定选项点击
+    optionsDiv.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            optionsDiv.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            answers[q.id] = parseInt(this.dataset.value);
+        });
+    });
+
+    // 导航按钮
+    document.getElementById('btn-prev').style.display = currentIndex === 0 ? 'none' : 'inline-block';
+    if (currentIndex === totalQuestions - 1) {
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('btn-submit').style.display = 'inline-block';
+    } else {
+        document.getElementById('btn-next').style.display = 'inline-block';
+        document.getElementById('btn-submit').style.display = 'none';
+    }
+
+    updateJumpButtons();
+}
+
+function updateJumpButtons() {
+    const jumpDiv = document.getElementById('q-jump');
+    let html = '';
+    for (let i = 0; i < totalQuestions; i++) {
+        const q = questions[i];
+        const cls = answers[q.id] !== undefined ? 'bg-success text-white' : (i === currentIndex ? 'bg-primary text-white' : 'bg-light');
+        html += `<button class="btn btn-sm ${cls} jump-btn" data-index="${i}" style="width:32px; height:32px; font-size:11px; padding:2px;">${q.id}</button>`;
+    }
+    jumpDiv.innerHTML = html;
+
+    jumpDiv.querySelectorAll('.jump-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentIndex = parseInt(this.dataset.index);
+            renderQuestion();
+        });
+    });
+}
+
+// 事件监听
+document.getElementById('btn-start-survey').addEventListener('click', function() {
+    document.getElementById('survey-intro').style.display = 'none';
+    document.getElementById('survey-quiz').style.display = 'block';
+    renderQuestion();
+});
+
+document.getElementById('btn-next').addEventListener('click', function() {
+    if (currentIndex < totalQuestions - 1) {
+        currentIndex++;
+        renderQuestion();
+    }
+});
+
+document.getElementById('btn-prev').addEventListener('click', function() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+    }
+});
+
+document.getElementById('btn-submit').addEventListener('click', async function() {
+    const answered = Object.keys(answers).length;
+    if (answered < totalQuestions) {
+        if (!confirm(`您还有 ${totalQuestions - answered} 道题未作答（将计为0分），确定提交吗？`)) {
+            return;
+        }
+    }
+
+    // 未答的题填0
+    for (const q of questions) {
+        if (answers[q.id] === undefined) {
+            answers[q.id] = 1;
+        }
+    }
+
+    document.getElementById('survey-quiz').style.display = 'none';
+    document.getElementById('survey-result').style.display = 'block';
+
+    // 构建结果区域骨架
+    document.getElementById('recommendation-display').innerHTML = '<div class="spinner-border text-success"></div>';
+
+    const resp = await fetch('{{ url_for("survey_submit") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answers })
+    });
+    const data = await resp.json();
+
+    // 推荐结果
+    const rec = data.recommendation;
+    const colors = ['primary', 'success', 'warning'];
+    let recHtml = '';
+    rec.forEach((subject, i) => {
+        recHtml += `<span class="badge bg-${colors[i]} fs-4 px-4 py-3">${i+1}. ${subject}</span>`;
+    });
+    document.getElementById('recommendation-display').innerHTML = recHtml;
+
+    // 图表
+    const results = data.results;
+    const labels = Object.keys(results);
+    const values = Object.values(results);
+
+    new Chart(document.getElementById('result-chart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '加权最终得分',
+                data: values,
+                backgroundColor: ['#0d6efd','#198754','#0dcaf0','#dc3545','#ffc107','#6c757d'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+
+    // 滚动到结果区
+    document.getElementById('survey-result').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('btn-retake').addEventListener('click', function() {
+    answers = {};
+    currentIndex = 0;
+    document.getElementById('survey-result').style.display = 'none';
+    document.getElementById('survey-intro').style.display = 'block';
+});
+</script>
+{% endblock %}

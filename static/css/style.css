@@ -1,0 +1,130 @@
+:root {
+    --xw-primary: #1a5c8a;
+    --xw-secondary: #2e8b57;
+    --xw-accent: #f0ad4e;
+}
+
+body {
+    background-color: #f5f6fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.card {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.subject-card .card-header {
+    font-weight: 600;
+}
+
+.subject-card .card-body {
+    max-height: 700px;
+    overflow-y: auto;
+}
+
+.subject-card h6 {
+    margin-top: 1rem;
+}
+
+.subject-card h6:first-child {
+    margin-top: 0;
+}
+
+/* Login tabs */
+.nav-tabs .nav-link {
+    font-weight: 500;
+    padding: 12px;
+    border: none;
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--xw-primary);
+    border-bottom: 3px solid var(--xw-primary);
+    background: transparent;
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+    border-bottom: 3px solid #dee2e6;
+}
+
+/* Survey */
+.option-btn {
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.option-btn:hover {
+    background-color: #e9ecef;
+}
+
+.option-btn.active {
+    background-color: #198754 !important;
+    color: white !important;
+    border-color: #198754 !important;
+}
+
+.jump-btn {
+    transition: all 0.15s ease;
+}
+
+/* Course selection */
+.course-select:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+/* Admin tables */
+.table th {
+    white-space: nowrap;
+}
+
+.btn-sm {
+    margin: 2px;
+}
+
+/* Dashboard cards */
+.badge.fs-6 {
+    font-size: 1rem !important;
+}
+
+/* Flash message position */
+.alert {
+    border-radius: 8px;
+}
+
+/* Chart container */
+canvas#result-chart {
+    max-height: 300px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card:hover {
+        transform: none;
+    }
+    .subject-card .card-body {
+        max-height: 400px;
+    }
+}

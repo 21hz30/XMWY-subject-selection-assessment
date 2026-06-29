@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}首页 - 西南位育选课系统{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <h3>欢迎您，
+        {% if current_user.get_role() == 'student' %}
+            {{ current_user.name }}
+        {% elif current_user.get_role() == 'teacher' %}
+            {{ current_user.name }}老师
+        {% elif current_user.get_role() == 'admin' %}
+            超级管理员
+        {% else %}
+            路人用户
+        {% endif %}
+    </h3>
+    <span class="badge bg-{{ 'primary' if current_user.get_role() == 'student' else 'success' if current_user.get_role() == 'teacher' else 'warning' if current_user.get_role() == 'admin' else 'info' }} fs-6">
+        {{ {'student': '学生', 'teacher': '教师', 'admin': '超级管理员', 'guest': '路人'}[current_user.get_role()] }}
+    </span>
+</div>
+
+<!-- 学生功能区 -->
+{% if current_user.get_role() == 'student' %}
+<div class="row g-4">
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-clipboard2-check text-success" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">个性化选科倾向测评</h5>
+                    <p class="card-text text-muted">通过80道科学测评题，系统分析您的学科兴趣与学业表现，给出个性化选科推荐。</p>
+                    <a href="{{ url_for('survey') }}" class="btn btn-success">开始测评</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if selected %}
+    <div id="survey-result" style="display:block;">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-trophy"></i> 历史测评结果</h4>
+            </div>
+            <div class="card-body"></div>
+                <div class="text-center mb-4">
+                    <h5>为您推荐的选科方案（排名第一）</h5>
+                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[0]}}</span>
+                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[1]}}</span>
+                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[2]}}</span><br><br>
+                    <h5>为您推荐的选科方案（排名第二）</h5>
+                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[3]}}</span>
+                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[4]}}</span>
+                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[5]}}</span><br><br>
+                    <h5>为您推荐的选科方案（排名第三）</h5>
+                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[6]}}</span>
+                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[7]}}</span>
+                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[8]}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <!-- <textarea
+        id="resultBox"
+        readonly
+        placeholder="这里将显示测评结果..."
+        class="w-full h-96 bg-gray-900 border border-gray-700 rounded-xl p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    ></textarea> -->
+</div>
+
+<!-- 教师功能区 -->
+{% elif current_user.get_role() == 'teacher' %}
+<div class="row g-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm border-primary">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill text-primary" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">学生信息与选课管理</h5>
+                <p class="card-text text-muted">查看、添加、编辑、删除学生信息；管理学生选课决定。</p>
+                <a href="{{ url_for('student_management') }}" class="btn btn-primary">进入管理</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+
+<script>
+// let isEditing = {{ 'false' if selected else 'true' }};
+// const originalValues = {
+//     course1: '{{ selected[0] if selected else "" }}',
+//     course2: '{{ selected[1] if selected else "" }}',
+//     course3: '{{ selected[2] if selected else "" }}'
+// };
+
+// document.getElementById('survey-result').style.display = 'block';
+// document.getElementById('recommendation-display').innerHTML = '<div class="spinner-border text-success"></div>';
+
+// const resp = await fetch('{{ url_for("get-resource") }}');
+// const data = await resp.json();
+
+// const rec = data.recommendation;
+// const colors = ['primary', 'success', 'warning'];
+// let recHtml = '';
+// rec.forEach((subject, i) => {
+//     recHtml += `<span class="badge bg-${colors[i]} fs-4 px-4 py-3">${i+1}. ${subject}</span>`;
+// });
+// document.getElementById('recommendation-display').innerHTML = recHtml;
+</script>
