@@ -16,13 +16,41 @@ login_manager.login_message = '请先登录后再访问该页面。'
 recommendation_store = []
 
 
+class StaticStudent:
+    id = '20250226'
+    name = '刘恺文'
+    class_name = '高一(2)班'
+    student_number = '20250226'
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return 'static_student_20250226'
+
+    def get_role(self):
+        return 'student'
+
+
+STATIC_STUDENT = StaticStudent()
+STATIC_STUDENT_NUMBER = '20250226'
+STATIC_STUDENT_PASSWORD = '20250226'
+
+
 # ---------- Flask-Login user loader ----------
 @login_manager.user_loader
 def load_user(user_id):
-    if user_id.startswith('student_'):
-        return Student.query.get(int(user_id[8:]))
-    elif user_id.startswith('teacher_'):
-        return Teacher.query.get(int(user_id[8:]))
+    if user_id == STATIC_STUDENT.get_id():
+        return STATIC_STUDENT
     return None
 
 
@@ -56,26 +84,15 @@ def login():
             if not student_number or not password:
                 flash('请输入学号和密码。', 'warning')
                 return redirect(url_for('login'))
-            user = Student.query.filter_by(student_number=student_number).first()
-            if user and user.check_password(password):
-                login_user(user)
-                flash(f'欢迎回来，{user.name}同学！', 'success')
+            if student_number == STATIC_STUDENT_NUMBER and password == STATIC_STUDENT_PASSWORD:
+                login_user(STATIC_STUDENT)
+                flash(f'欢迎回来，{STATIC_STUDENT.name}同学！', 'success')
                 return redirect(url_for('dashboard'))
             flash('学号或密码错误。', 'danger')
             return redirect(url_for('login'))
 
         elif role == 'teacher':
-            employee_id = request.form.get('employee_id', '').strip()
-            password = request.form.get('password', '').strip()
-            if not employee_id or not password:
-                flash('请输入教职工号和密码。', 'warning')
-                return redirect(url_for('login'))
-            user = Teacher.query.filter_by(employee_id=employee_id).first()
-            if user and user.check_password(password):
-                login_user(user)
-                flash(f'欢迎回来，{user.name}老师！', 'success')
-                return redirect(url_for('dashboard'))
-            flash('教职工号或密码错误。', 'danger')
+            flash('当前线上版本仅开放学生账号登录。', 'warning')
             return redirect(url_for('login'))
 
     return render_template('login.html')
@@ -96,10 +113,7 @@ def logout():
 def dashboard():
     role = current_user.get_role()
     if role == 'student':
-        student = Student.query.get(current_user.id)
-        selected = None
-        if student.selected_courses:
-            selected = student.selected_courses.split(',')
+        selected = session.get('selected_courses')
         return render_template('dashboard.html', role=role, selected = selected)
     else:
         return render_template('dashboard.html', role=role)
@@ -207,10 +221,7 @@ def survey():
 @app.route('/survey/get-resource')
 @login_required
 def get_resource():
-    student = Student.query.get(current_user.id)
-    selected = None
-    if student.selected_courses:
-        selected = student.selected_courses.split(',')
+    selected = session.get('selected_courses')
     return jsonify({
         'status': 'ok',
         'recommendation': selected
@@ -454,9 +465,7 @@ def survey_submit():
     for i in range(0,3):
         tmp_list = results[i]
         recommendation.extend(tmp_list['combo'])
-    student = Student.query.get(current_user.id)
-    student.selected_courses = ','.join(recommendation)
-    db.session.commit()
+    session['selected_courses'] = recommendation
 
     tmp_list = results[0]
     recommendation = tmp_list['combo']
@@ -730,13 +739,5 @@ def admin_change_password():
     return jsonify({'status': 'ok', 'message': '管理员密码修改成功。'})
 
 
-# ---------- App initialization ----------
-@app.before_request
-def create_tables():
-    db.create_all()
-
-
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, port=5000)
