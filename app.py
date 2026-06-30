@@ -52,6 +52,7 @@ STATIC_STUDENT_NUMBER = '20250226'
 STATIC_STUDENT_PASSWORD = '20250226'
 
 SUBJECT_ORDER = ['物理', '化学', '生物', '历史', '地理', '政治']
+SUBJECT_RANK = {subject: index for index, subject in enumerate(SUBJECT_ORDER)}
 SUBJECT_META = {
     '物理': {'icon': 'bi-lightning-charge-fill', 'color': 'physics'},
     '化学': {'icon': 'bi-beaker-fill', 'color': 'chemistry'},
@@ -143,8 +144,16 @@ TIER_MAP = {
 TIER_BONUS = {'T1': 0.15, 'T2': 0.10, 'T3': 0.05, 'T4': 0}
 
 
+def normalize_combo(combo):
+    return tuple(sorted(combo, key=lambda subject: SUBJECT_RANK[subject]))
+
+
+COMBO_NOTES = {normalize_combo(key): value for key, value in COMBO_NOTES.items()}
+TIER_MAP = {normalize_combo(key): value for key, value in TIER_MAP.items()}
+
+
 def get_tier(combo):
-    return TIER_MAP.get(tuple(sorted(combo)), 'T4')
+    return TIER_MAP.get(normalize_combo(combo), 'T4')
 
 
 def is_phys_chem(combo):
@@ -397,7 +406,7 @@ def build_report_payload(raw_scores, subject_profiles, results):
 
     alternatives = []
     for index, item in enumerate(top_results, start=1):
-        sorted_combo = tuple(sorted(item['combo']))
+        sorted_combo = normalize_combo(item['combo'])
         alternatives.append({
             'rank': index,
             'combo': list(item['combo']),
@@ -433,7 +442,7 @@ def build_report_payload(raw_scores, subject_profiles, results):
         'tier': best['tier'],
         'tier_label': tier_info['label'],
         'hero_summary': summary,
-        'combo_summary': COMBO_NOTES.get(tuple(sorted(combo)), tier_info['summary']),
+        'combo_summary': COMBO_NOTES.get(normalize_combo(combo), tier_info['summary']),
         'warning': combo_warning(combo, best['tier']),
         'has_phys_chem': is_phys_chem(combo),
         'edges': best['edges'],
