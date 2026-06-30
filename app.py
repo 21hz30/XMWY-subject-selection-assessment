@@ -55,7 +55,7 @@ SUBJECT_ORDER = ['物理', '化学', '生物', '历史', '地理', '政治']
 SUBJECT_RANK = {subject: index for index, subject in enumerate(SUBJECT_ORDER)}
 SUBJECT_META = {
     '物理': {'icon': 'bi-lightning-charge-fill', 'color': 'physics'},
-    '化学': {'icon': 'bi-beaker-fill', 'color': 'chemistry'},
+    '化学': {'icon': 'bi-eyedropper', 'color': 'chemistry'},
     '生物': {'icon': 'bi-flower1', 'color': 'biology'},
     '历史': {'icon': 'bi-clock-history', 'color': 'history'},
     '地理': {'icon': 'bi-globe-asia-australia', 'color': 'geography'},

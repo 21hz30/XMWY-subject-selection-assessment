@@ -1,6 +1,6 @@
 const XNWY_SUBJECT_STYLES = {
     '物理': { colorClass: 'physics', icon: 'bi-lightning-charge-fill' },
-    '化学': { colorClass: 'chemistry', icon: 'bi-beaker-fill' },
+    '化学': { colorClass: 'chemistry', icon: 'bi-eyedropper' },
     '生物': { colorClass: 'biology', icon: 'bi-flower1' },
     '历史': { colorClass: 'history', icon: 'bi-clock-history' },
     '地理': { colorClass: 'geography', icon: 'bi-globe-asia-australia' },
