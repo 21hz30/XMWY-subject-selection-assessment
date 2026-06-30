@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}首页 - 西南位育选课系统{% endblock %}
 {% block content %}
-
 <div class="mb-4">
     <h3>欢迎您，
         {% if current_user.get_role() == 'student' %}
@@ -19,56 +18,39 @@
     </span>
 </div>
 
-<!-- 学生功能区 -->
 {% if current_user.get_role() == 'student' %}
 <div class="row g-4">
-    <div class="d-flex justify-content-center align-items-center">
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-success">
-                <div class="card-body text-center">
-                    <i class="bi bi-clipboard2-check text-success" style="font-size: 3rem;"></i>
-                    <h5 class="card-title mt-3">个性化选科倾向测评</h5>
-                    <p class="card-text text-muted">通过80道科学测评题，系统分析您的学科兴趣与学业表现，给出个性化选科推荐。</p>
-                    <a href="{{ url_for('survey') }}" class="btn btn-success">开始测评</a>
+    <div class="col-12">
+        <div class="card shadow-sm border-success">
+            <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <div class="text-success fw-semibold mb-2">分院帽选科测评</div>
+                    <h4 class="mb-2">生成一份解释清楚的选科报告</h4>
+                    <p class="text-muted mb-0">通过69道测评题，系统会综合兴趣、成绩、实践经历和学习信心，输出推荐组合与理由说明。</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('survey') }}" class="btn btn-success btn-lg">开始测评</a>
                 </div>
             </div>
         </div>
     </div>
 
-    {% if selected %}
-    <div id="survey-result" style="display:block;">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-trophy"></i> 历史测评结果</h4>
-            </div>
-            <div class="card-body"></div>
-                <div class="text-center mb-4">
-                    <h5>为您推荐的选科方案（排名第一）</h5>
-                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[0]}}</span>
-                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[1]}}</span>
-                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[2]}}</span><br><br>
-                    <h5>为您推荐的选科方案（排名第二）</h5>
-                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[3]}}</span>
-                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[4]}}</span>
-                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[5]}}</span><br><br>
-                    <h5>为您推荐的选科方案（排名第三）</h5>
-                    <span class="badge bg-primary fs-4 px-4 py-3">1. {{selected[6]}}</span>
-                    <span class="badge bg-success fs-4 px-4 py-3">2. {{selected[7]}}</span>
-                    <span class="badge bg-warning fs-4 px-4 py-3">3. {{selected[8]}}</span>
+    {% if report_data %}
+    <div class="col-12">
+        <div class="report-shell">
+            <div class="report-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <div class="report-kicker">最近一次结果</div>
+                    <h4 class="mb-1">个性化选科报告</h4>
+                    <p class="text-muted mb-0">系统会优先展示最推荐方案，同时保留第二、第三方案供你比较。</p>
                 </div>
+                <a href="{{ url_for('survey') }}" class="btn btn-outline-secondary">重新测评</a>
             </div>
+            <div id="dashboard-report-root" class="mt-4"></div>
         </div>
     </div>
     {% endif %}
-    <!-- <textarea
-        id="resultBox"
-        readonly
-        placeholder="这里将显示测评结果..."
-        class="w-full h-96 bg-gray-900 border border-gray-700 rounded-xl p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    ></textarea> -->
 </div>
-
-<!-- 教师功能区 -->
 {% elif current_user.get_role() == 'teacher' %}
 <div class="row g-4">
     <div class="col-lg-4 col-md-6">
@@ -83,29 +65,18 @@
     </div>
 </div>
 {% endif %}
-
 {% endblock %}
 
-
+{% block scripts %}
+{% if report_data %}
 <script>
-// let isEditing = {{ 'false' if selected else 'true' }};
-// const originalValues = {
-//     course1: '{{ selected[0] if selected else "" }}',
-//     course2: '{{ selected[1] if selected else "" }}',
-//     course3: '{{ selected[2] if selected else "" }}'
-// };
-
-// document.getElementById('survey-result').style.display = 'block';
-// document.getElementById('recommendation-display').innerHTML = '<div class="spinner-border text-success"></div>';
-
-// const resp = await fetch('{{ url_for("get-resource") }}');
-// const data = await resp.json();
-
-// const rec = data.recommendation;
-// const colors = ['primary', 'success', 'warning'];
-// let recHtml = '';
-// rec.forEach((subject, i) => {
-//     recHtml += `<span class="badge bg-${colors[i]} fs-4 px-4 py-3">${i+1}. ${subject}</span>`;
-// });
-// document.getElementById('recommendation-display').innerHTML = recHtml;
+document.addEventListener('DOMContentLoaded', function() {
+    const report = {{ report_data | tojson }};
+    const root = document.getElementById('dashboard-report-root');
+    if (root && window.XNWYReport) {
+        window.XNWYReport.renderReport(root, report);
+    }
+});
 </script>
+{% endif %}
+{% endblock %}

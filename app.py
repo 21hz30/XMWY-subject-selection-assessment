@@ -1,10 +1,16 @@
+import itertools
+import json
 import random
+import ssl
+import urllib.error
+import urllib.request
 from functools import wraps
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+
 from config import Config
 from models import db, Student, Teacher
-import itertools
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -44,6 +50,398 @@ class StaticStudent:
 STATIC_STUDENT = StaticStudent()
 STATIC_STUDENT_NUMBER = '20250226'
 STATIC_STUDENT_PASSWORD = '20250226'
+
+SUBJECT_ORDER = ['物理', '化学', '生物', '历史', '地理', '政治']
+SUBJECT_META = {
+    '物理': {'icon': 'bi-lightning-charge-fill', 'color': 'physics'},
+    '化学': {'icon': 'bi-beaker-fill', 'color': 'chemistry'},
+    '生物': {'icon': 'bi-flower1', 'color': 'biology'},
+    '历史': {'icon': 'bi-clock-history', 'color': 'history'},
+    '地理': {'icon': 'bi-globe-asia-australia', 'color': 'geography'},
+    '政治': {'icon': 'bi-bank', 'color': 'politics'},
+}
+
+DIMENSION_LABELS = {
+    'academic': '学业表现',
+    'interest': '兴趣倾向',
+    'practice': '实践经历',
+    'confidence': '学习信心',
+}
+
+TIER_COPY = {
+    'T1': {
+        'label': '高覆盖组合',
+        'summary': '这一组合位于高覆盖梯队，在大学专业报考范围和组合稳定性上都更占优。',
+    },
+    'T2': {
+        'label': '均衡组合',
+        'summary': '这一组合兼顾个人优势与专业覆盖，属于可持续发展的稳健选择。',
+    },
+    'T3': {
+        'label': '边缘可选组合',
+        'summary': '这一组合可以成立，但部分专业方向会明显收窄，需要结合目标专业谨慎判断。',
+    },
+    'T4': {
+        'label': '高风险组合',
+        'summary': '这一组合专业覆盖面较窄，系统会保留结果但会明确提示其风险。',
+    },
+}
+
+COMBO_NOTES = {
+    ('物理', '化学', '生物'): '传统理科路径最完整，对理工、医学与生命科学方向都较友好。',
+    ('物理', '化学', '地理'): '保留理工主干，同时兼顾地理信息、城乡规划与空间分析方向。',
+    ('物理', '化学', '历史'): '在保住理工覆盖面的同时，为历史、社科与综合评价方向留出弹性。',
+    ('物理', '化学', '政治'): '既保留理工基础，也兼顾法学、公安学类和公共事务相关方向。',
+    ('历史', '地理', '政治'): '纯文综覆盖完整，更适合目标明确偏向人文社科的学生。',
+    ('化学', '生物', '地理'): '适合医药、环境与地理交叉兴趣较强，但不强求物理路径的学生。',
+    ('化学', '生物', '政治'): '兼顾医药生物基础与公共议题兴趣，适合方向较综合的学生。',
+    ('物理', '生物', '地理'): '有物理基础，但由于缺少化学，理工农医专业覆盖会受限。',
+    ('物理', '生物', '政治'): '保留物理逻辑优势，同时体现社会议题兴趣，但专业口径不如物化双选宽。',
+    ('历史', '地理', '生物'): '文理混合特征明显，适合兴趣跨度较大的学生。',
+    ('历史', '政治', '生物'): '兼顾生命科学兴趣与人文表达能力，适合跨学科取向学生。',
+    ('物理', '生物', '历史'): '个人兴趣可以支撑，但缺少化学会显著限制大量理工方向。',
+    ('物理', '地理', '历史'): '空间分析与人文理解较强，但理工专业报考面明显收窄。',
+    ('物理', '地理', '政治'): '对地理与公共议题有优势，但理工主线不如物化双选稳定。',
+    ('化学', '生物', '历史'): '保留化生优势，适合生命科学兴趣明确、同时偏好人文阅读的学生。',
+    ('化学', '地理', '政治'): '兼顾资源环境、地理与公共议题，但缺物理会影响多数工科方向。',
+    ('生物', '地理', '政治'): '更适合兴趣明显偏综合文理、且接受专业覆盖收窄的学生。',
+    ('物理', '历史', '政治'): '该组合不利于形成稳定的专业覆盖面，建议慎重选择。',
+}
+
+ADJ = {
+    '物理': ['化学', '地理'],
+    '化学': ['物理', '生物'],
+    '生物': ['化学'],
+    '地理': ['物理', '历史', '政治'],
+    '历史': ['地理', '政治'],
+    '政治': ['历史', '地理']
+}
+
+TIER_MAP = {
+    ('物理', '化学', '生物'): 'T1',
+    ('物理', '化学', '地理'): 'T1',
+    ('物理', '化学', '历史'): 'T1',
+    ('物理', '化学', '政治'): 'T1',
+    ('地理', '历史', '政治'): 'T1',
+    ('化学', '生物', '地理'): 'T2',
+    ('化学', '生物', '政治'): 'T2',
+    ('物理', '生物', '地理'): 'T2',
+    ('物理', '生物', '政治'): 'T2',
+    ('历史', '地理', '生物'): 'T2',
+    ('历史', '政治', '生物'): 'T2',
+    ('物理', '生物', '历史'): 'T3',
+    ('物理', '地理', '历史'): 'T3',
+    ('物理', '地理', '政治'): 'T3',
+    ('化学', '生物', '历史'): 'T3',
+    ('化学', '地理', '政治'): 'T3',
+    ('生物', '地理', '政治'): 'T3',
+    ('物理', '历史', '政治'): 'T4',
+    ('物理', '历史', '生物'): 'T4',
+    ('物理', '政治', '生物'): 'T4',
+}
+
+TIER_BONUS = {'T1': 0.15, 'T2': 0.10, 'T3': 0.05, 'T4': 0}
+
+
+def get_tier(combo):
+    return TIER_MAP.get(tuple(sorted(combo)), 'T4')
+
+
+def is_phys_chem(combo):
+    return '物理' in combo and '化学' in combo
+
+
+def count_edges(combo):
+    cnt = 0
+    for i in range(3):
+        for j in range(i + 1, 3):
+            if combo[j] in ADJ.get(combo[i], []):
+                cnt += 1
+    return cnt
+
+
+def subject_reason(subject, profile):
+    ranking = sorted(profile['dimensions'].items(), key=lambda item: item[1], reverse=True)
+    lead_key, lead_score = ranking[0]
+    second_key, second_score = ranking[1]
+    lead_label = DIMENSION_LABELS[lead_key]
+    second_label = DIMENSION_LABELS[second_key]
+
+    snippets = []
+    if lead_key == 'academic':
+        snippets.append(f"{subject}的{lead_label}最突出，说明你在这门课上的成绩基础和稳定性更能支撑长期学习。")
+    elif lead_key == 'interest':
+        snippets.append(f"{subject}的{lead_label}最强，说明你不是只会做题，而是真的愿意持续投入这门学科。")
+    elif lead_key == 'practice':
+        snippets.append(f"{subject}的{lead_label}表现亮眼，相关活动、竞赛或课题经历为这门学科提供了额外支持。")
+    else:
+        snippets.append(f"{subject}的{lead_label}较高，说明你对后续学习难度和节奏有比较稳定的心理预期。")
+
+    if second_score >= 3.8:
+        snippets.append(f"同时，{second_label}也处在较高水平，这让它不仅适合当前，也更适合作为长期选科。")
+    elif profile['raw_score'] >= 4.0:
+        snippets.append("综合分保持在高位，说明这不是单一维度拉起来的结果，而是整体匹配度较好。")
+    else:
+        snippets.append("它未必是最轻松的一门，但从综合表现看，仍然值得放进你的优先选择里。")
+
+    return ''.join(snippets)
+
+
+def combo_warning(combo, tier):
+    combo_set = set(combo)
+    if tier == 'T4':
+        return '该组合专业覆盖率偏低，尤其对理工农医方向限制明显，系统不建议作为优先方案。'
+    if '物理' in combo_set and '化学' not in combo_set:
+        return '该组合包含物理但缺少化学。按照文档思路，这会明显压缩大量理工农医专业的报考空间。'
+    if combo_set == {'历史', '地理', '政治'}:
+        return '这是纯文综组合，人文社科覆盖完整，但绝大多数理工农医专业将不再可选。'
+    if '化学' in combo_set and '物理' not in combo_set:
+        return '该组合保留了部分化学、生物相关方向，但缺少物理后，多数工科路径会明显收窄。'
+    return '这组方案整体风险可控，但最终仍建议结合目标大学和目标专业再做一次核对。'
+
+
+def parse_json_object(text):
+    cleaned = text.strip()
+    if cleaned.startswith('```'):
+        parts = cleaned.split('```')
+        cleaned = ''.join(part for part in parts if not part.strip().startswith('json')).strip()
+    start = cleaned.find('{')
+    end = cleaned.rfind('}')
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        return json.loads(cleaned[start:end + 1])
+    except json.JSONDecodeError:
+        return None
+
+
+def extract_response_text(payload):
+    if isinstance(payload.get('output_text'), str) and payload['output_text'].strip():
+        return payload['output_text'].strip()
+
+    chunks = []
+    for item in payload.get('output', []):
+        for content in item.get('content', []):
+            text = content.get('text')
+            if text:
+                chunks.append(text)
+    return '\n'.join(chunks).strip()
+
+
+def extract_chat_completion_text(payload):
+    choices = payload.get('choices', [])
+    if not choices:
+        return ''
+    message = choices[0].get('message', {})
+    content = message.get('content', '')
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        chunks = []
+        for item in content:
+            if isinstance(item, dict) and item.get('text'):
+                chunks.append(item['text'])
+        return '\n'.join(chunks).strip()
+    return ''
+
+
+def post_json(url, payload, timeout, ssl_context, api_key):
+    request_obj = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+    with urllib.request.urlopen(
+        request_obj,
+        timeout=timeout,
+        context=ssl_context,
+    ) as response:
+        return json.loads(response.read().decode('utf-8'))
+
+
+def generate_llm_report_copy(report_payload, raw_scores, subject_profiles):
+    api_key = app.config.get('DEEPSEEK_API_KEY')
+    if not api_key:
+        return report_payload
+
+    top_subjects = []
+    for subject in report_payload['subjects']:
+        profile = subject_profiles[subject['name']]
+        top_subjects.append({
+            'subject': subject['name'],
+            'raw_score': subject['raw_score'],
+            'academic': profile['dimensions']['academic'],
+            'interest': profile['dimensions']['interest'],
+            'practice': profile['dimensions']['practice'],
+            'confidence': profile['dimensions']['confidence'],
+        })
+
+    prompt_payload = {
+        'top_combo': report_payload['top_combo'],
+        'tier': report_payload['tier'],
+        'tier_label': report_payload['tier_label'],
+        'top_score': report_payload['top_score'],
+        'has_phys_chem': report_payload['has_phys_chem'],
+        'warning_seed': report_payload['warning'],
+        'ranked_subject_scores': raw_scores,
+        'top_subject_breakdown': top_subjects,
+        'alternatives': report_payload['alternatives'],
+    }
+
+    system_prompt = (
+        '你是一名熟悉上海新高考选科逻辑的资深升学顾问。'
+        '请根据结构化数据，为高中生生成简洁、可信、具体的中文解释。'
+        '不要写套话，不要提“模型”或“AI”，不要编造专业覆盖率数字。'
+        '请严格只输出 JSON 对象，包含 hero_summary、combo_summary、warning 三个字段。'
+    )
+    user_prompt = (
+        '请为“最推荐方案”生成文案。\n'
+        '要求：\n'
+        '1. hero_summary：45-90字，适合放在顶部摘要区，语气明确。\n'
+        '2. combo_summary：90-160字，说明为什么推荐这个组合，重点结合学生优势和组合结构。\n'
+        '3. warning：40-90字，给出温和但明确的风险提醒。\n'
+        '4. 必须基于输入数据，避免空泛赞美。\n'
+        '5. 输出必须是合法 JSON。\n\n'
+        f'数据：{json.dumps(prompt_payload, ensure_ascii=False)}'
+    )
+
+    responses_payload = {
+        'model': app.config.get('DEEPSEEK_MODEL'),
+        'input': [
+            {
+                'role': 'system',
+                'content': [{'type': 'input_text', 'text': system_prompt}],
+            },
+            {
+                'role': 'user',
+                'content': [{'type': 'input_text', 'text': user_prompt}],
+            },
+        ],
+    }
+    chat_payload = {
+        'model': app.config.get('DEEPSEEK_MODEL'),
+        'messages': [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt},
+        ],
+        'temperature': 0.7,
+    }
+    base_url = app.config.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1').rstrip('/')
+    ssl_context = None
+    if not app.config.get('DEEPSEEK_SSL_VERIFY', True):
+        ssl_context = ssl._create_unverified_context()
+
+    llm_text = ''
+    try:
+        response_payload = post_json(
+            f'{base_url}/responses',
+            responses_payload,
+            app.config.get('DEEPSEEK_TIMEOUT_SECONDS', 20),
+            ssl_context,
+            api_key,
+        )
+        llm_text = extract_response_text(response_payload)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError):
+        try:
+            response_payload = post_json(
+                f'{base_url}/chat/completions',
+                chat_payload,
+                app.config.get('DEEPSEEK_TIMEOUT_SECONDS', 20),
+                ssl_context,
+                api_key,
+            )
+            llm_text = extract_chat_completion_text(response_payload)
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError):
+            return report_payload
+
+    parsed = parse_json_object(llm_text)
+    if not parsed:
+        return report_payload
+
+    enriched = dict(report_payload)
+    hero_summary = parsed.get('hero_summary', '').strip()
+    combo_summary = parsed.get('combo_summary', '').strip()
+    warning = parsed.get('warning', '').strip()
+
+    if hero_summary:
+        enriched['hero_summary'] = hero_summary
+    if combo_summary:
+        enriched['combo_summary'] = combo_summary
+    if warning:
+        enriched['warning'] = warning
+    return enriched
+
+
+def build_report_payload(raw_scores, subject_profiles, results):
+    ranked_subjects = sorted(raw_scores.items(), key=lambda item: item[1], reverse=True)
+    top_results = results[:3]
+    best = top_results[0]
+    combo = list(best['combo'])
+    best_sorted_subjects = sorted(combo, key=lambda subject: raw_scores[subject], reverse=True)
+    tier_info = TIER_COPY[best['tier']]
+
+    report_subjects = []
+    for subject in best_sorted_subjects:
+        profile = subject_profiles[subject]
+        report_subjects.append({
+            'name': subject,
+            'raw_score': profile['raw_score'],
+            'meta': SUBJECT_META[subject],
+            'dimensions': profile['dimensions'],
+            'reason': subject_reason(subject, profile),
+        })
+
+    alternatives = []
+    for index, item in enumerate(top_results, start=1):
+        sorted_combo = tuple(sorted(item['combo']))
+        alternatives.append({
+            'rank': index,
+            'combo': list(item['combo']),
+            'score': item['score'],
+            'tier': item['tier'],
+            'tier_label': TIER_COPY[item['tier']]['label'],
+            'summary': COMBO_NOTES.get(sorted_combo, TIER_COPY[item['tier']]['summary']),
+            'has_phys_chem': is_phys_chem(item['combo']),
+        })
+
+    report_card_subjects = sorted(
+        [
+            {
+                'name': subject,
+                'score': score,
+                'meta': SUBJECT_META[subject],
+            }
+            for subject, score in ranked_subjects
+        ],
+        key=lambda item: item['score'],
+        reverse=True,
+    )
+
+    summary = '这组推荐同时考虑了你的单科综合得分与组合覆盖面。'
+    if is_phys_chem(combo):
+        summary += '它保住了“物理+化学”这一核心组合，因此在专业选择的安全边界上更稳。'
+    else:
+        summary += '虽然它不包含物化双选，但在你的个人优势分布下，仍然具备成立理由。'
+
+    report_payload = {
+        'top_combo': combo,
+        'top_score': best['score'],
+        'tier': best['tier'],
+        'tier_label': tier_info['label'],
+        'hero_summary': summary,
+        'combo_summary': COMBO_NOTES.get(tuple(sorted(combo)), tier_info['summary']),
+        'warning': combo_warning(combo, best['tier']),
+        'has_phys_chem': is_phys_chem(combo),
+        'edges': best['edges'],
+        'subjects': report_subjects,
+        'all_subject_scores': report_card_subjects,
+        'alternatives': alternatives,
+    }
+    return generate_llm_report_copy(report_payload, raw_scores, subject_profiles)
 
 
 # ---------- Flask-Login user loader ----------
@@ -113,8 +511,8 @@ def logout():
 def dashboard():
     role = current_user.get_role()
     if role == 'student':
-        selected = session.get('selected_courses')
-        return render_template('dashboard.html', role=role, selected = selected)
+        report_data = session.get('report_data')
+        return render_template('dashboard.html', role=role, report_data=report_data)
     else:
         return render_template('dashboard.html', role=role)
 
@@ -374,11 +772,68 @@ def survey_submit():
     raw_scores = {}
     sub_list = ['物理','化学','生物','历史','地理','政治']
     scores_tmp = [physics_raw, chemistry_raw, biology_raw, history_raw, geography_raw, politics_raw]
+    subject_profiles = {}
     i = 0
     for sub in sub_list:
         raw_scores[sub] = scores_tmp[i]
         i += 1
-    print(raw_scores)
+
+    subject_profiles = {
+        '物理': {
+            'raw_score': physics_raw,
+            'dimensions': {
+                'academic': physics_score,
+                'interest': round(physics_interest, 3),
+                'practice': li_practice,
+                'confidence': physics_confidence,
+            },
+        },
+        '化学': {
+            'raw_score': chemistry_raw,
+            'dimensions': {
+                'academic': chemistry_score,
+                'interest': round(chemistry_interest, 3),
+                'practice': li_practice,
+                'confidence': chemistry_confidence,
+            },
+        },
+        '生物': {
+            'raw_score': biology_raw,
+            'dimensions': {
+                'academic': biology_score,
+                'interest': round(biology_interest, 3),
+                'practice': li_practice,
+                'confidence': biology_confidence,
+            },
+        },
+        '历史': {
+            'raw_score': history_raw,
+            'dimensions': {
+                'academic': history_score,
+                'interest': round(history_interest, 3),
+                'practice': wen_practice,
+                'confidence': history_confidence,
+            },
+        },
+        '地理': {
+            'raw_score': geography_raw,
+            'dimensions': {
+                'academic': geography_score,
+                'interest': round(geography_interest, 3),
+                'practice': wen_practice,
+                'confidence': geography_confidence,
+            },
+        },
+        '政治': {
+            'raw_score': politics_raw,
+            'dimensions': {
+                'academic': politics_score,
+                'interest': round(politics_interest, 3),
+                'practice': wen_practice,
+                'confidence': politics_confidence,
+            },
+        },
+    }
     # physics_raw = sum_q([1, 2, 3, 4, 29, 30, 31, 32, 33, 59, 25, 26, 28])
     # chemistry_raw = sum_q([5, 6, 7, 8, 34, 35, 36, 37, 38, 59, 25, 26, 27])
     # biology_raw = sum_q([9, 10, 11, 12, 39, 40, 41, 42, 43, 59, 25, 26, 27])
@@ -393,53 +848,6 @@ def survey_submit():
 
     # 这个加权基准用于按比例缩放各科原始分
     # 各科最终得分 = 该科权重分占总权重分的比例 * 加权基准
-    ADJ = {
-        '物理': ['化学','地理'],
-        '化学': ['物理','生物'],
-        '生物': ['化学'],
-        '地理': ['物理','历史','政治'],
-        '历史': ['地理','政治'],
-        '政治': ['历史','地理']
-    }
-
-    TIER_MAP = {
-        ('物理','化学','生物'): 'T1',
-        ('物理','化学','地理'): 'T1',
-        ('物理','化学','历史'): 'T1',
-        ('物理','化学','政治'): 'T1',
-        ('地理','历史','政治'): 'T1',
-        ('化学','生物','地理'): 'T2',
-        ('化学','生物','政治'): 'T2',
-        ('物理','生物','地理'): 'T2',
-        ('物理','生物','政治'): 'T2',
-        ('历史','地理','生物'): 'T2',
-        ('历史','政治','生物'): 'T2',
-        ('物理','生物','历史'): 'T3',
-        ('物理','地理','历史'): 'T3',
-        ('物理','地理','政治'): 'T3',
-        ('化学','生物','历史'): 'T3',
-        ('化学','地理','政治'): 'T3',
-        ('生物','地理','政治'): 'T3',
-        ('物理','历史','政治'): 'T4',
-        ('物理','历史','生物'): 'T4',
-        ('物理','政治','生物'): 'T4',
-    }
-    TIER_BONUS = {'T1':0.15, 'T2':0.10, 'T3':0.05, 'T4':0}
-
-    def get_tier(combo):
-        return TIER_MAP.get(tuple(sorted(combo)), 'T4')
-
-    def is_phys_chem(combo):
-        return '物理' in combo and '化学' in combo
-
-    def count_edges(combo):
-        cnt = 0
-        for i in range(3):
-            for j in range(i+1, 3):
-                if combo[j] in ADJ.get(combo[i], []):
-                    cnt += 1
-        return cnt
-    
     subjects = list(raw_scores.keys())
     combos = list(itertools.combinations(subjects, 3))
     results = []
@@ -469,11 +877,13 @@ def survey_submit():
 
     tmp_list = results[0]
     recommendation = tmp_list['combo']
-    print(recommendation)
+    report_payload = build_report_payload(raw_scores, subject_profiles, results)
+    session['report_data'] = report_payload
     return jsonify({
         'status': 'ok',
         'results': results,
-        'recommendation': recommendation
+        'recommendation': recommendation,
+        'report': report_payload
     })
 
 # @app.route('/get_class', methods=['POST'])

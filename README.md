@@ -28,6 +28,7 @@
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 python app.py
 ```
 
@@ -36,6 +37,30 @@ python app.py
 ```text
 http://127.0.0.1:5000
 ```
+
+## DeepSeek 文案生成配置
+
+如果希望“最推荐方案”里的说明文案走 DeepSeek 接口，可以直接复制根目录的 `.env.example` 为 `.env`，再填写这些后端环境变量：
+
+```bash
+DEEPSEEK_API_KEY="你的 DeepSeek API Key"
+DEEPSEEK_BASE_URL="https://api.deepseek.com/v1"
+DEEPSEEK_MODEL="deepseek-chat"
+DEEPSEEK_SSL_VERIFY="true"
+```
+
+可选超时配置：
+
+```bash
+DEEPSEEK_TIMEOUT_SECONDS="20"
+```
+
+说明：
+
+- 项目启动时会自动读取根目录 `.env`。
+- 这是 Flask 后端调用，不需要使用 `VITE_` 前缀。
+- 项目仍兼容旧的 `OPENAI_*` 变量名，但现在优先读取 `DEEPSEEK_*`。
+- 如果你本地网络环境存在代理证书问题，可仅在本地把 `DEEPSEEK_SSL_VERIFY=false` 作为调试兜底；线上环境建议保持 `true`。
 
 应用默认使用当前目录下的 SQLite 数据库 `xuanke.db`。该文件包含本地账号和业务数据，已被 `.gitignore` 排除，不会提交到 GitHub。
 
